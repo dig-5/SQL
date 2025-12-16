@@ -1,0 +1,195 @@
+CREATE PROCEDURE INSCajaAhorro  @NroSocio INT,
+			        @NroSucursal SMALLINT,
+				@FechaApertura DATETIME,
+				@NroTipoCuenta SMALLINT,
+				@Observacion VARCHAR(255),
+				@NroSolicitud INT,
+				@NroPersona INT,
+				@FechaSolicitud	DATETIME,
+				@ImporteApertura MONEY,
+				@TasaInteres REAL,
+				@NroTipoCaja SMALLINT,
+				@TipoCaja VARCHAR(50),
+				@NroContrato INT,
+				@PlazoOperacion SMALLINT,
+				@ImporteMinimo MONEY,
+				@CantidadCuotas	INT,
+				@ImporteCapital MONEY,
+				@NroCuenta INT OUTPUT
+
+AS
+
+BEGIN
+
+	DECLARE @errmsg VARCHAR (255), 
+		@NroCuota INT,
+		@FechaVencimiento DATETIME,
+		@ImporteInteres MONEY,
+		@ImporteCuota MONEY;
+
+	BEGIN TRY
+
+	BEGIN TRANSACTION;
+
+-- Se obtiene el Número de Cuenta a partir del Socio
+
+	SELECT @NroCuenta = ISNULL(MAX(NroCuenta), 0) + 1
+	FROM Cuenta
+	WHERE NroSocio = @NroSocio;
+
+-- Inserción de la fila en la tabla Cuenta
+
+	INSERT INTO Cuenta (NroSocio,
+			    NroCuenta,
+			    NroSucursal,
+			    FechaApertura,
+			    NroTipoCuenta,
+			    TotalDebitos,
+			    TotalCreditos,
+			    Observacion)
+	SELECT  @NroSocio,
+	  	@NroCuenta,
+		@NroSucursal,
+		@FechaApertura,
+		@NroTipoCuenta,
+		0,
+		0,
+		@Observacion;
+
+-- Inserción de la fila en la tabla CajaAhorro
+
+	INSERT INTO CajaAhorro (NroSocio,
+				NroCuenta,
+				NroSolicitud,
+				NroPersona,
+				FechaSolicitud,
+				FechaApertura,
+				ImporteApertura,
+				TasaInteres,
+				FechaCancelacion,
+				NroTipoCaja)
+	SELECT  @NroSocio,
+	  	@NroCuenta,
+		@NroSolicitud,
+		@NroPersona,
+		@FechaSolicitud,
+		@FechaSolicitud,
+		@ImporteApertura,
+		@TasaInteres,
+		NULL,
+		@NroTipoCaja;
+
+-- Inserción de la fila en CajaAhorroPlazoFijo, si corresponde
+
+	IF  @TipoCaja = 'Plazo Fijo'
+	BEGIN
+		INSERT INTO CajaAhorroPlazoFijo (NroSocio,
+						 NroCuenta,
+						 NroContrato,
+						 PlazoOperacion)
+		SELECT 	@NroSocio,
+	  	       	@NroCuenta,
+			@NroContrato,
+			@PlazoOperacion;
+	END;
+
+-- Inserción de la fila en CajaAhorroAlaVista, si corresponde
+
+	IF  @TipoCaja = 'Vista'
+	BEGIN
+		INSERT INTO CajaAhorroAlaVista (NroSocio,
+						NroCuenta,
+						ImporteMinimo)
+		SELECT 	@NroSocio,
+	  	       	@NroCuenta,
+			@ImporteMinimo;
+	END;
+
+-- Inserción de la fila en CajaAhorroPrevioProgramado, si corresponde
+
+	IF  @TipoCaja = 'Previo Programado'
+	BEGIN
+		SELECT @ImporteInteres = @ImporteCapital * ((@TasaInteres / 360) * @CantidadCuotas * 30);
+
+		INSERT INTO CajaAhorroPrevioProgramado (NroSocio,
+							NroCuenta,
+							NroContrato,
+							CantidadCuotas,
+							ImporteCapital,
+							ImporteInteres)
+		SELECT 	@NroSocio,
+	  	       	@NroCuenta,
+			@NroContrato,
+			@CantidadCuotas,
+			@ImporteCapital,
+			@ImporteInteres;
+
+-- Generación de las cuotas de la caja de ahorro previo programado
+	
+		SELECT  @NroCuota = 1,
+		        @FechaVencimiento = DATEADD(DAY, 30, @FechaSolicitud),
+			@ImporteCuota = ROUND((@ImporteCapital + @ImporteInteres) / @CantidadCuotas, 0);
+
+		WHILE @NroCuota < @CantidadCuotas
+		BEGIN
+			INSERT INTO CuotaCajaAhorroPrevioProgramado (NroSocio, 
+								     NroCuenta,
+								     NroCuota,
+								     FechaVencimiento,
+								     ImporteCuota,
+								     ImporteCapital,
+								     ImporteInteres,
+								     ImportePagado)
+			SELECT 	@NroSocio,
+	  	       		@NroCuenta,
+				@NroCuota,
+				@FechaVencimiento,
+				@ImporteCuota,
+				ROUND(@ImporteCapital / @CantidadCuotas, 0),
+				ROUND(@Importeinteres / @CantidadCuotas, 0),
+				0;
+
+			SELECT  @NroCuota = @NroCuota + 1,
+		        	@FechaVencimiento = DATEADD(DAY, 30, @FechaVencimiento);
+
+		END;
+
+		INSERT INTO CuotaCajaAhorroPrevioProgramado (NroSocio, 
+							     NroCuenta,
+							     NroCuota,
+							     FechaVencimiento,
+							     ImporteCuota,
+							     ImporteCapital,
+							     ImporteInteres,
+							     ImportePagado)
+		SELECT 	@NroSocio,
+	  	       	@NroCuenta,
+			@NroCuota,
+			@FechaVencimiento,
+			(@ImporteCapital + @ImporteInteres) - SUM(ImporteCuota),
+			@ImporteCapital - SUM(ImporteCapital),
+			@ImporteInteres - SUM(ImporteInteres),
+			0
+		FROM CuotaCajaAhorroPrevioProgramado
+		WHERE NroSocio = @NroSocio
+		AND NroCuenta = @NroCuenta;
+	END;
+
+	COMMIT TRANSACTION;
+
+	RETURN;
+
+	END TRY
+
+	BEGIN CATCH
+
+		IF  @errmsg IS NULL
+			SELECT @errmsg = ERROR_MESSAGE ();
+
+		RAISERROR (@errmsg, 16, 1);
+
+		ROLLBACK TRANSACTION;
+
+	END CATCH
+
+END;

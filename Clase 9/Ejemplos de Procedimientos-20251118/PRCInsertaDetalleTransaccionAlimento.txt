@@ -1,0 +1,215 @@
+CREATE PROCEDURE PRCInsertaDetalleTransaccionAlimento @NroTransaccion BIGINT,
+						      @NroAlimento INT,
+						      @Cantidad FLOAT
+
+AS
+
+BEGIN
+
+	DECLARE @ErrMsg VARCHAR(255);
+
+	BEGIN TRY
+
+	BEGIN TRANSACTION;
+
+-- La transacción debe existir en TransaccionAlimento
+
+	IF  NOT EXISTS (SELECT * FROM TransaccionAlimento
+			WHERE NroTransaccion = @NroTransaccion)
+	BEGIN
+		SELECT @ErrMsg = '> La Transacción de Alimentos no existe ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- La transacción debe existir en TransaccionAlimento
+
+	IF  EXISTS (SELECT * FROM TransaccionAlimento
+		    WHERE NroTransaccion = @NroTransaccion
+		    AND Estado <> 'A')
+	BEGIN
+		SELECT @ErrMsg = '> La Transacción de Alimentos no está abierta ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- Si la transacción es de consumo o transferencia, la combinación de edificio + piso + depósito 
+-- (de transaccionalimento) + alimento (@NroAlimento), debe existir en depositoalimento
+
+	IF  EXISTS (SELECT * FROM Consumo
+		    WHERE NroTransaccion = @NroTransaccion)
+	OR  EXISTS (SELECT * FROM Transferencia
+		    WHERE NroTransaccion = @NroTransaccion)
+	BEGIN
+		IF  NOT EXISTS (SELECT * 
+				FROM TransaccionAlimento ta 
+				JOIN DepositoAlimento da
+				ON ta.NroEdificio = da.NroEdificio
+				AND ta.NroPiso = da.NroPiso
+				AND ta.NroDeposito = da.NroDeposito
+				WHERE ta.NroTransaccion = @NroTransaccion
+				AND da.NroAlimento = @NroAlimento)
+		BEGIN
+			SELECT @ErrMsg = '> La Transacción de Alimentos es un Consumo o Transferencia y no existen alimentos en el depósito de salida ...';
+			RAISERROR ('Error', 16);
+		END;
+
+-- La cantidad de la salida (recibida como parámetro de entrada) debe ser menor o igual a la existencia en DepositoAlimento
+
+		IF  EXISTS (SELECT * 
+			    FROM TransaccionAlimento ta 
+			    JOIN DepositoAlimento da
+			    ON ta.NroEdificio = da.NroEdificio
+			    AND ta.NroPiso = da.NroPiso
+			    AND ta.NroDeposito = da.NroDeposito
+			    WHERE ta.NroTransaccion = @NroTransaccion
+			    AND da.NroAlimento = @NroAlimento
+			    AND da.Existencia < @Cantidad)
+		BEGIN
+			SELECT @ErrMsg = '> La Transacción de Alimentos es un Consumo o Transferencia y la existencia del alimento en el depósito de salida es menor a la cantidad de la salida ...';
+			RAISERROR ('Error', 16);
+		END;
+
+	END;
+
+-- Inserción de la fila en DetalleTransaccionAlimento
+
+	INSERT INTO DetalleTransaccionAlimento (NroTransaccion,
+						NroAlimento,
+						Cantidad,
+						PrecioVenta,
+						CostoPromedio,
+						PorcentajeIVA)
+	SELECT @NroTransaccion,
+	       @NroAlimento,
+	       @Cantidad,
+               ha.PrecioVenta,
+	       da.CostoPromedio,
+               a.PorcentajeIVA
+	FROM Alimento a JOIN HotelAlimento ha ON a.NroAlimento = ha.NroAlimento
+	JOIN Edificio e ON e.NroHotel = ha.NroHotel
+	JOIN TransaccionAlimento ta ON ta.NroEdificio = e.NroEdificio
+	JOIN DepositoAlimento da
+	ON ta.NroEdificio = da.NroEdificio
+	AND ta.NroPiso = da.NroPiso
+	AND ta.NroDeposito = da.NroDeposito
+	WHERE ta.NroTransaccion = @NroTransaccion
+	AND a.NroAlimento = @NroAlimento
+	AND da.NroAlimento = @NroAlimento;
+
+-- Actualización de la existencia de DepositoAlimento restando la cantidad a la existencia si se trata
+-- de una transacción de consumo o transferencia
+
+	IF  EXISTS (SELECT * FROM Consumo
+		    WHERE NroTransaccion = @NroTransaccion)
+	OR  EXISTS (SELECT * FROM Transferencia
+		    WHERE NroTransaccion = @NroTransaccion)
+	BEGIN
+		UPDATE DepositoAlimento SET Existencia = Existencia - @Cantidad
+		FROM DepositoAlimento da JOIN TransaccionAlimento ta 
+		ON ta.NroEdificio = da.NroEdificio
+		AND ta.NroPiso = da.NroPiso
+		AND ta.NroDeposito = da.NroDeposito
+		AND da.NroAlimento = @NroAlimento
+		WHERE ta.NroTransaccion = @NroTransaccion;
+	END
+
+	ELSE
+	
+-- Actualización de la existencia de DepositoAlimento sumando la cantidad a la existencia si se trata
+-- de una transacción de compra
+
+/*
+	BEGIN
+
+		IF  NOT EXISTS (SELECT * FROM DepositoAlimento da JOIN TransaccionAlimento ta 
+				ON ta.NroEdificio = da.NroEdificio
+				AND ta.NroPiso = da.NroPiso
+				AND ta.NroDeposito = da.NroDeposito
+				AND da.NroAlimento = @NroAlimento
+				WHERE ta.NroTransaccion = @NroTransaccion)
+		BEGIN
+			INSERT INTO DepositoAlimento (NroEdificio,
+						      NroPiso,
+						      NroDeposito,
+						      NroAlimento,
+						      Existencia,
+						      CostoPromedio)
+			SELECT ta.NroEdificio,
+			       ta.NroPiso,
+			       ta.NroDeposito,
+			       a.NroAlimento,
+			       @Cantidad,
+			       a.CostoPromedio
+			FROM TransaccionAlimento ta, Alimento a
+			WHERE ta.NroTransaccion = @NroTransaccion
+			AND a.NroAlimento = @NroAlimento;
+		END
+
+		ELSE
+
+		BEGIN
+
+			UPDATE DepositoAlimento SET Existencia = Existencia + @Cantidad
+			FROM DepositoAlimento da JOIN TransaccionAlimento ta 
+			ON ta.NroEdificio = da.NroEdificio
+			AND ta.NroPiso = da.NroPiso
+			AND ta.NroDeposito = da.NroDeposito
+			AND da.NroAlimento = @NroAlimento
+			WHERE ta.NroTransaccion = @NroTransaccion;
+		
+		END;
+	END;
+*/
+
+	BEGIN
+
+		INSERT INTO DepositoAlimento (NroEdificio,
+					      NroPiso,
+					      NroDeposito,
+					      NroAlimento,
+					      Existencia,
+					      CostoPromedio)
+		SELECT ta.NroEdificio,
+		       ta.NroPiso,
+		       ta.NroDeposito,
+		       a.NroAlimento,
+		       0,
+		       a.CostoPromedio
+		FROM TransaccionAlimento ta, Alimento a
+		WHERE ta.NroTransaccion = @NroTransaccion
+		AND a.NroAlimento = @NroAlimento
+		AND NOT EXISTS (SELECT * FROM DepositoAlimento da 
+				WHERE ta.NroEdificio = da.NroEdificio
+				AND ta.NroPiso = da.NroPiso
+				AND ta.NroDeposito = da.NroDeposito
+				AND da.NroAlimento = @NroAlimento)
+
+		UPDATE DepositoAlimento SET Existencia = Existencia + @Cantidad
+		FROM DepositoAlimento da JOIN TransaccionAlimento ta 
+		ON ta.NroEdificio = da.NroEdificio
+		AND ta.NroPiso = da.NroPiso
+		AND ta.NroDeposito = da.NroDeposito
+		AND da.NroAlimento = @NroAlimento
+		WHERE ta.NroTransaccion = @NroTransaccion;
+		
+	END;
+
+	COMMIT TRANSACTION;
+	
+	RETURN 1;
+
+	END TRY
+
+	BEGIN CATCH
+
+		IF  @ErrMsg IS NULL
+		    SELECT @ErrMsg = ERROR_MESSAGE();
+
+		RAISERROR (@ErrMsg, 16);
+
+		ROLLBACK TRANSACTION;
+
+		RETURN 0;
+	
+	END CATCH
+
+END;

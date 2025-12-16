@@ -1,0 +1,113 @@
+CREATE TRIGGER TI_Hospedaje ON Hospedaje FOR INSERT
+
+AS
+
+BEGIN
+
+	DECLARE @ErrMsg VARCHAR(255);
+
+	BEGIN TRY
+
+-- El cliente no debe tener deudas en otros hospedajes
+
+	IF  EXISTS (SELECT * FROM Hospedaje h JOIN inserted i 
+		    ON h.NroCliente = i.NroCliente
+		    WHERE h.MontoTotal > h.MontoCancelado
+		    AND h.NroHospedaje <> i.NroHospedaje)
+	BEGIN
+		SELECT @ErrMsg = '> El cliente no debe tener deudas en otros hospedajes ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- Las filas insertadas deben tener estado = 'A'
+
+	IF  EXISTS (SELECT * FROM inserted i 
+		    WHERE i.Estado <> 'A')
+	BEGIN
+		SELECT @ErrMsg = '> Todos los hospedajes deben insertarse con estado igual a ''A'' ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- Las filas insertadas deben tener nulos en PersonalCheckOut y FechaSalida
+
+	IF  EXISTS (SELECT * FROM inserted i 
+		    WHERE FechaSalida IS NOT NULL
+		    OR PersonalCheckOut IS NOT NULL)
+	BEGIN
+		SELECT @ErrMsg = '> Todos los hospedajes deben tener nulos en la fecha de salida y en el personal de check out ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- La habitación del hospedaje no debe estar reservada 
+
+	IF  EXISTS (SELECT * FROM inserted i JOIN Reserva r 
+		    ON i.NroEdificio = r.NroEdificio
+		    AND i.NroPiso = r.NroPiso
+		    AND i.NroHabitacion = r.NroHabitacion
+		    WHERE i.FechaHospedaje BETWEEN r.FechaInicioReserva AND r.FechaFinReserva)
+	BEGIN
+		SELECT @ErrMsg = '> La habitación del hospedaje está reservada en la fecha del hospedaje ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- La habitación del hospedaje no debe estar asignada a otro hospedaje abierto
+
+	IF  EXISTS (SELECT * FROM inserted i JOIN Hospedaje h
+		    ON i.NroEdificio = h.NroEdificio
+		    AND i.NroPiso = h.NroPiso
+		    AND i.NroHabitacion = h.NroHabitacion
+		    WHERE i.NroHospedaje <> h.NroHospedaje
+		    AND h.Estado = 'A')
+	BEGIN
+		SELECT @ErrMsg = '> La habitación del hospedaje no debe estar asignada a otro hospedaje abierto ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- La habitación del hospedaje no debe estar asignada a otro hospedaje abierto
+
+	IF  EXISTS (SELECT * FROM inserted i JOIN HospedajeHabitacionHistorico hhh
+		    ON i.NroEdificio = h.NroEdificio
+		    AND i.NroPiso = h.NroPiso
+		    AND i.NroHabitacion = h.NroHabitacion
+		    JOIN Hospedaje h ON i.NroHospedaje = h.NroHospedaje
+		    WHERE h.NroHospedaje = hhh.NroHospedaje
+		    AND h.Estado = 'A')
+	BEGIN
+		SELECT @ErrMsg = '> La habitación del hospedaje no debe estar asignada a otro hospedaje abierto...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- 
+
+	UPDATE Hospedaje SET MontoTotal = 0, MontoCancelado = 0
+	FROM Hospedaje h JOIN inserted i
+	ON h.NroHospedaje = i.NroHospedaje;
+/*
+	UPDATE Hospedaje SET MontoTotal = 0, MontoCancelado = 0
+	WHERE EXISTS (SELECT * FROM inserted i 
+		      WHERE hospedaje.NroHospedaje = i.NroHospedaje);
+*/
+
+	INSERT INTO AuditoriaHospedaje
+	SELECT NEXT VALUE FOR SEQ_AuditoriaHospedaje,
+	       'I',
+	       inserted.*,
+	       GETDATE(),
+	       SUSER_SNAME(),
+	       HOST_NAME()
+	FROM inserted; 
+
+	END TRY
+
+	BEGIN CATCH
+
+		IF  @ErrMsg IS NULL
+		    SELECT @ErrMsg = ERROR_MESSAGE();
+
+		RAISERROR (@ErrMsg, 16);
+
+		ROLLBACK TRANSACTION;
+
+	END CATCH
+
+END;

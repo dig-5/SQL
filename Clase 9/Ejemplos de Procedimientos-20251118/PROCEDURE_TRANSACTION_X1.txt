@@ -1,0 +1,117 @@
+CREATE PROCEDURE PRCCierraTransferenciaEntrada @NroTransferencia INT
+
+AS
+
+BEGIN
+--
+	DECLARE 	@ErrNo INT,
+			@ErrMsg VARCHAR(255)
+--
+	BEGIN TRY
+--
+	BEGIN TRANSACTION
+
+-- Validaciones
+
+	IF  NOT EXISTS (SELECT * FROM Transferencia WHERE NroTransferencia = @NroTransferencia)
+	BEGIN
+		SELECT @ErrMsg = '> Transferencia Inexistente ...';
+		RAISERROR ('Error', 16, 1);
+	END;
+--
+	IF  EXISTS (SELECT * FROM Transferencia 
+                    WHERE NroTransferencia = @NroTransferencia
+	            AND EstadoSalida = 0)
+	BEGIN
+		SELECT @ErrMsg = '> Transferencia con Estado de Salida incorrecto ...';
+		RAISERROR ('Error', 16, 1);
+	END;
+--
+	IF  EXISTS (SELECT * FROM Transferencia 
+                    WHERE NroTransferencia = @NroTransferencia
+	            AND EstadoEntrada = 1)
+	BEGIN
+		SELECT @ErrMsg = '> Transferencia con Estado de Entrada incorrecto ...';
+		RAISERROR ('Error', 16, 1);
+	END;
+
+-- Procesos
+
+	INSERT INTO Stock (CodAgencia,
+			   CodDeposito,
+			   NroArticulo,
+			   NroLote,
+			   TotalCompras,
+			   TotalVentas,
+			   TotalDevoluciones,
+			   TotalTransferenciasSalida,
+			   TotalTranferenciasEntrada,
+			   TotalAjustesPositivos,
+			   TotalAjustesNegativos,
+			   Existencia,
+			   Estado)
+	SELECT T.CodAgenciaEntrada,
+		T.CodDepositoEntrada,
+		DT.NroArticulo,
+		DT.NroLote,
+		0, 0, 0, 0, 0, 0, 0, 0, 
+		1
+	FROM DetalleTransferencia DT JOIN Transferencia T ON T.NroTransferencia = DT.NroTransferencia
+	WHERE T.NroTransferencia = @NroTransferencia
+        AND NOT EXISTS (SELECT * FROM Stock S
+			WHERE S.CodAgencia = T.CodAgenciaEntrada
+			AND S.CodDeposito = T.CodDepositoEntrada
+			AND S.NroArticulo = DT.NroArticulo
+			AND S.NroLote = DT.NroLote);
+--
+	INSERT INTO DetalleTransferenciaEntrada (NroTransferencia,
+						 CodAgenciaEntrada,
+						 CodDepositoEntrada,
+						 NroArticulo,
+						 NroLote,
+						 Cantidad)
+	SELECT T.NroTransferencia,
+		T.CodAgenciaEntrada,
+		T.CodDepositoEntrada,
+		DT.NroArticulo,
+		DT.NroLote,
+		DT.Cantidad
+	FROM DetalleTransferencia DT JOIN Transferencia T ON T.NroTransferencia = DT.NroTransferencia
+	WHERE T.NroTransferencia = @NroTransferencia;
+--
+
+	UPDATE Stock 
+	SET TotalTranferenciasEntrada = TotalTranferenciasEntrada + DTE.Cantidad,
+	    Existencia = Existencia + DTE.Cantidad
+	FROM DetalleTransferenciaEntrada DTE 
+	JOIN Transferencia T ON T.NroTransferencia = DT.NroTransferencia
+	JOIN Stock S ON S.CodAgencia = DTE.CodAgenciaEntrada
+		    AND S.CodDeposito = DTE.CodDepositoEntrada
+		    AND S.NroArticulo = DTE.NroArticulo
+		    AND S.NroLote = DTE.NroLote
+	WHERE T.NroTransferencia = @NroTransferencia;
+--
+	UPDATE Transferencia
+	SET EstadoEntrada = 1
+	WHERE NroTransferencia = @NroTransferencia;
+
+	COMMIT TRANSACTION;
+	
+	RETURN;
+	
+	END TRY
+	
+	BEGIN CATCH
+	
+		IF  @ErrMsg IS NULL 
+		BEGIN
+			SELECT @ErrMsg = ERROR_MESSAGE ();
+		END;
+
+		RAISERROR (@ErrMsg, 16, 1);
+
+		ROLLBACK TRANSACTION;
+	
+	END CATCH
+
+END;

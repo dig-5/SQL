@@ -1,0 +1,139 @@
+CREATE TRIGGER TU_Transferencia ON Transferencia FOR UPDATE
+
+AS
+
+BEGIN
+
+	DECLARE @ErrMsg VARCHAR(255);
+
+	BEGIN TRY
+
+-- Solo se puede modificar datos de la columna Estado
+
+	IF  UPDATE (NroTransaccion)
+        OR  UPDATE (NroEdificio)
+	OR  UPDATE (NroPiso)
+	OR  UPDATE (NroDeposito)
+	BEGIN
+		SELECT @ErrMsg = '> En una transferencia solo se puede actualizar el Estado ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- No se puede actualizar el estado de las transferencias cerradas (estado = 'C'') 
+-- o anuladas (estado = 'N')
+
+	IF  EXISTS (SELECT * FROM deleted d
+		    WHERE Estado IN ('C', 'N'))
+	BEGIN
+		SELECT @ErrMsg = '> No se pueden actualizar transferencias con estado cerrado o anulado ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- solo se puede actualizar el estado de A a C o de A a N
+
+	IF  EXISTS (SELECT * FROM deleted d JOIN inserted i
+		    ON d.NroTransaccion = i.NroTransaccion
+		    WHERE d.Estado = 'A' AND i.Estado = 'A')
+	BEGIN
+		SELECT @ErrMsg = '> Solo se pueden actualizar transferencias de estado abierto a cerrado o anulado ...';
+		RAISERROR ('Error', 16);
+	END;
+
+-- Actualización de la existencia de DepositoAlimento restando la cantidad a la existencia si se trata
+-- de una transacción de consumo o transferencia
+
+	UPDATE DepositoAlimento SET Existencia = Existencia + i.Cantidad
+	FROM (SELECT ta.NroEdificio,
+		     ta.NroPiso,
+		     ta.NroDeposito,
+		     dta.NroAlimento,
+		     SUM(dta.Cantidad) as Cantidad
+		FROM TransaccionAlimento ta JOIN inserted i
+		ON i.NroTransaccion = ta.NroTransaccion
+		JOIN DetalleTransaccionAlimento dta
+		ON i.NroTransaccion = dta.NroTransaccion
+		WHERE i.Estado = 'N'
+		GROUP BY ta.NroEdificio,
+			 ta.NroPiso,
+			 ta.NroDeposito,
+			 dta.NroAlimento) AS i
+	JOIN DepositoAlimento da 
+	ON i.NroEdificio = da.NroEdificio
+	AND i.NroPiso = da.NroPiso
+	AND i.NroDeposito = da.NroDeposito
+	AND i.NroAlimento = da.NroAlimento;
+	
+-- Actualización de la existencia de DepositoAlimento sumando la cantidad a la existencia si se trata
+-- de una transacción de compra
+
+	INSERT INTO DepositoAlimento (NroEdificio,
+				      NroPiso,
+				      NroDeposito,
+				      NroAlimento,
+				      Existencia,
+				      CostoPromedio)
+	SELECT  i.NroEdificio,
+	        i.NroPiso,
+		i.NroDeposito,
+		dta.NroAlimento,
+		0,
+		a.CostoPromedio
+	FROM inserted i JOIN DetalleTransaccionAlimento dta 
+	ON i.NroTransaccion = dta.NroTransaccion
+	JOIN Alimento a
+	ON dta.NroAlimento = a.NroAlimento
+	AND NOT EXISTS (SELECT * FROM DepositoAlimento da 
+			WHERE i.NroEdificio = da.NroEdificio
+			AND i.NroPiso = da.NroPiso
+			AND i.NroDeposito = da.NroDeposito
+			AND dta.NroAlimento = da.NroAlimento)
+	WHERE i.Estado = 'C';
+
+-- Inserta las filas de la transferencia en su entrada en DetalleTransferenciaEntrada
+
+	INSERT INTO DetalleTransferenciaEntrada	(NroTransaccion,
+						 NroAlimento,
+						 Cantidad,
+						 CostoPromedio)
+	SELECT  dta.NroTransaccion,
+	        dta.NroAlimento,
+		dta.Cantidad,
+		dta.CostoPromedio
+	FROM DetalleTransaccionAlimento dta JOIN inserted i ON i.NroTransaccion = dta.NroTransaccion
+	WHERE i.Estado = 'C';
+
+-- Actualización de la existencia en DepositoAlimento para las transferencias cerradas
+
+	UPDATE DepositoAlimento SET Existencia = Existencia + i.Cantidad
+	FROM (SELECT i.NroEdificio,
+		     i.NroPiso,
+		     i.NroDeposito,
+		     dta.NroAlimento,
+		     SUM(dta.Cantidad) as Cantidad
+		FROM inserted i JOIN DetalleTransaccionAlimento dta
+		ON i.NroTransaccion = dta.NroTransaccion
+		WHERE i.Estado = 'C'
+		GROUP BY i.NroEdificio,
+			 i.NroPiso,
+			 i.NroDeposito,
+			 dta.NroAlimento) AS i
+	JOIN DepositoAlimento da 
+	ON i.NroEdificio = da.NroEdificio
+	AND i.NroPiso = da.NroPiso
+	AND i.NroDeposito = da.NroDeposito
+	AND i.NroAlimento = da.NroAlimento;
+
+	END TRY
+
+	BEGIN CATCH
+
+		IF  @ErrMsg IS NULL
+		    SELECT @ErrMsg = ERROR_MESSAGE();
+
+		RAISERROR (@ErrMsg, 16);
+
+		ROLLBACK TRANSACTION;
+
+	END CATCH
+
+END;
