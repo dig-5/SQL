@@ -1,0 +1,65 @@
+Su casa. Pregunta de repaso. Cualquier pregunta, es el momento de hacerlo. La próxima clase, no va a haber consultas. Se le va a entregar su su examen y tiene 3 horas resolver.
+
+Así que en este momento aclaren todo lo que ustedes tengan dudas. Si no tienen dudas, yo a todos los que están online ya les puse el presente casi todos, por ahí voy a volver a repasar, te pongo a. Buenas. Estoy verificando todavía los tus compañeros. Entonces, todavía no, no, por, no les publico.
+
+¿Qué tener en cuenta? Le vamos a hacer una pequeña revisión de todos los conceptos que van a utilizar. ¿Se entiende? Ahora bien, habíamos que nos era recomendable cuando los temas en el escenario, de no utilizar subsettle en el seller, por, ¿Dónde? O sea, ¿cuándo es no es recomendable tener subsele dentro del?
+
+Tenemos unos pasos. El primero es. ¿Qué le dice? No importa la fuente, que sí importa es que los tipos de datos sean iguales. Que yo le diría que había un riesgo.
+
+Vamos a escribir eso. ¿Qué puede pasar acá? Si una de las 2 jornadas de valor nulo, ¿qué va hacer en Zoom? ¿Cómo la va a considerar? ¿Un nulo o cómo queda?
+
+Como 0 toma, ¿está? Esa fila es 0 para el Entonces, lo recomendable es acá ustedes ponen el is nulo. Y le ponen 0. ¿Se entiende? Porque el zoom, como tengan en cuenta, trabaja a nivel columna, o sea, vertical, y en cambio el la la suma más horizontal, ¿ya?
+
+¿Se entiende? Esa línea va a ser 0. Sí, va a devolver 2, va a sumar 2. ¿Cómo podría ser una solución a esto? Que yo haga así.
+
+Pero ¿dónde va a estar nuestro problema acá? Es que me sirve solamente cuando hago los resúmenes y agrupado, ¿está? Tiene que haber un total acá, total acá y me va a salir. ¿Se entiende las diferencias? No, va a salir 1 ya.
+
+El Zoom, cuando encuentras, no, lo consideras 0. O sea, tengan en cuenta esos pequeños detallitos, porque ahí están liando, ¿va? Si de repente en su examen yo le pido que hagan sumatorias de columnas, si no está la verificación, está mal. ¿Por qué? Porque ya existe un posible escenario donde mueran, a no ser que tu tabla diga, no puede ser nula esa columna.
+
+¿Tiene que justificar eso? No me pueden escribir acá, acá yo sumo estas 2 columnas. Ustedes me tienen que decir, ¿por qué no no es nulo en la otra tabla? Yo puedo hacer eso. ¿Se entiende?
+
+Sí, donde dice, justifica, justifican. Y si no hay justificación, no sirve el ejercicio. Por eso, ahora yo no le puedo juzgar en 3 horas cómo adquirir su wairi, pero sí le puedo juzgar cómo entienden su wairi. ¿Entienden la diferencia? Por eso yo necesito que me expliquen por qué hacen eso.
+
+O por qué te das ese lujo de no poner ningún ninguna condición. Se entiende el caso ahí, ¿verdad? Por eso es que yo le voy a pasar ya la base, y ustedes van a poder ver dónde están los. Entonces, si una columna de saldo te dice que puede ser nulo, ¿qué te debe poner? Es nulo.
+
+Ahora, te dice que no puede ser nulo, ahí estás tranquilo, te aseguraste con la base. Es concurrente, o sea, coherente, todo lo que vos quieras. ¿Sí? ¿Entiendes? Pero tengan en cuenta, su examen va a tener 9 ejercicios, en realidad son 5, pero cuando explicas.
+
+Todavía no sé si va haber un sexto perdín que explicar, y eso es parte, y si no está el justificativo, no vale ese ejercicio. Por eso es que tienen que entender bien la lógica, así mismo como estuvimos hablando recién, por qué estamos usando esas cosas. ¿Se entiende? Pero están en su casa, ¿entendieron su dilema existencial? ¿Está claro?
+
+¿Se entiende entonces cómo va a ser su evaluación? Todavía no me definí la cantidad de ejercicio, pues tengo que medir su tiempo también que dure 3 horas, ¿verdad? Entonces, ustedes ahí lo que tienen que ver es qué la lógica están utilizando ahí. Si de repente le dicen, le digo, no pueden utilizar sus consultas, cuáles son sus posibles alternativas. Si le digo, no pueden utilizar CTE, ¿cuáles son sus posibles alternativas?
+
+Es lo lo que le estoy diciendo, dónde pueden usar variables, dónde pueden utilizar tablas virtuales, todo eso, ¿está? ¿Consulta hasta ahí? ¿Está todo claro? Sí, o sea, por ejemplo, digo, usá subseller, esa es tu tu consigna, o sea, tenés que usar. Ahora bien, si me usaras en las columnas, ¿por qué pusiste ahí?
+
+Si usaste near from, ¿por qué pusiste ahí? Lo que no quiero leer es un comentario que diga, este trae tal cosa, este inserta tal cosa, recuerden, dice insert. O sea, ¿puedo hacer? Podés hacer, podés decir tu tiempo, fue rápido, es una tabla, vamos a decir una tabla paramétrica, pero tenés que atender ahí, porque. O sea, tu decisión ahí está.
+
+Por eso no están Y recuerden, su examen va a ser de script, es de 5, no archivos por separado. Un solo archivo. No existe, por eso, tema 0, no existe nada de eso. Un solo tiene que ser, o sea, si ejercicio tanto, ejercicio tanto. No están correlacionados, es decir, que si les pido que creen una tabla en un solo ejercicio, les va decir que todo eso va ocurrir ahí.
+
+En el siguiente caso ya no hace más falta utilizar la tabla de arriba, por eso que de repente si ustedes no hicieron un ejercicio, pasan al siguiente, no hay problema. Si van a tener ejercicio con muchos ítems, ¿Está claro, Dai? Bueno, ¿alguna pregunta? Claro. ¿Saben cuándo usar vistas?
+
+¿Cuándo usamos vistas? Que es lo principal que más caramba en la vista. Las tablas, las tablas completas. Ustedes la complejidad están ocultando ahí. Entonces, select, columna from vista.
+
+Por detrás puede haber n cálculos que el usuario o el analista, el que está utilizando eso, no va a haber nunca, o sea, no va a haber la definición. Entonces, para eso recibe las vistas. De repente si ya es muy complejo poner en todos los lugares, hacen que vengan su vista y ya está. ¿Alguna otra pregunta? Porque hicimos un resumen general de todo el lenguaje, así que ¿Preguntas?
+
+¿Te quedó claro, entonces, el cuándo usar left, cuándo usar right, cuándo usar inner, full, out, ¿Te quedó claro? ¿Cuál? No, es una consulta que vos guardás. ¿Qué es lo que te tienen que garantizar según la ley de la ley de Court? Es que si yo lanzo esa consulta de la tabla, me trae x datos.
+
+Si yo consulto la vista, me tiene que traer x datos otra vez. No puede variar en 6 meses. Después tenés, en cada motor va a tener alguna forma de vista materializada, tablas de memoria, etcétera, que lo que te permite es que vos tengas optimizado eso, ya estés disponible sea más rápido. ¿Por qué? Porque las vistas tienen que lanzarse el query en ese momento.
+
+Ahora que soluciona eso con una vista materializada que te dice, voy a ejecutar en tal momento. Entonces, hasta esa hora yo te garantizo que sean iguales, ¿va? Entonces, tienen su forma y cada motor tiene sus características. ¿Por qué hago hincapié que existen diferentes motores? Porque su materia es lenguaje SQL, no SQL Server, SQL.
+
+Usamos SQL Server porque es más barato probar y toda esa cosa. Ahora que prácticamente si ustedes no pagan lo mínimo, no van a hacer nada. ¿Ya? Y si ya los tipos de índice no van servir. Entonces, es como para que tengan en cuenta todos los posibles escenarios que ustedes pueden tener.
+
+Porque es incompleto, no, no tiene todo. Un poco más estable, acuérdate cuando es open source, depende de que todos hayan programado bien, y no tener una garantía. Y de repente tenés la parte de performance, después tenés la parte de tipo de de procedimiento, como dijo su compañero Thompson, que pueden hacer el que tiene todos los motores, pero eso. Eso que tengan en cuenta. Cada motor tiene sus ventajas y sus desventajas.
+
+En este caso, estamos en 1 intermedio, vamos a decir que este es el Toyota de Toyota normal Chilleré, que funciona, ese suele ser. Está. Ahora, cuando hablemos de de Oracle, estamos hablando o un Byron o la camioneta más tuneado que puedan ver con todos los ultravio para ver que sale igual que un deportivo. O un tractor Lamborghini, ¿qué es eso? Recibe con todo el mismo precio.
+
+¿Entiendes la diferencia, verdad? ¿Y cuál es el tema? Dependiendo del escenario que te estén corriendo, necesitan el soporte, necesitan garantizar que va a funcionar siempre, o al menos la probabilidad de error sea menor. Entonces, otra vez para correr un motor van a necesitar una mejor infraestructura. Pobre, corre en una 8 8 6, así funciona el, como su licencia te habla de de cuántos núcleos tenés, cuánto hilo va a correr, cuánto va de memoria tenés, cuánto almacenamiento tenés, se dan cuenta que tiene que tener la infraestructura para eso, ¿Está?
+
+Entonces, tengan en cuenta, SQL Server básicamente le puede salir como un 0 Toyota, pero no un auto de alto performance. ¿Está? Es fiable. Siempre que vos pagás, tenés una empresa que te garantiza algo. Cosa que ocurre con con Linux, tener acá que pagás porque tenés alguien que te garantiza que funcione esa Distro.
+
+Simple. Por eso, y tengan en cuenta que también depende del alcance. Por ejemplo, si tenés escenarios, lo que son los SQL, tenés un motor para ese tipo de escenario, y cada 1 soluciona un problema. Tenés SQL Lite, que son los que se retiraron de nuestra, de debate, y te sirve para aplicaciones, y eso va dentro de la aplicación. No hay motor por detrás.
+
+Depende mucho del escenario. En línea general, una vez que toquen, ahora que lo van a decir, ay, qué lindo que es, pero después cuando vean el precio, nos vamos volver a pobres. Rímac con otra cosa, pobre. Ahí está, sepa que tengan en cuenta. Entonces, si ustedes van a trabajar en una solución open source, ahí está.
+
+¿Tienen algo de presupuesto? Server, y si tenemos partida de plata, Solamente, no, no es SQL, o sea, no, no, no, es, o sea, es SQL, ¿está? Existen otros motores que son no SQL. O son datos estructurados que vamos a tener. Pero como ven, tienen plata para sponsor de Gartform, sí que funciona.
+
+Bueno, ¿alguna pregunta hasta ahí? ¿Estamos listos para rendir la próxima clase? ¿Estamos listos? A más o que están listos. Los que están
