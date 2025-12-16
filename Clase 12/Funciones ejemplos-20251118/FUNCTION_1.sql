@@ -1,0 +1,24 @@
+-- Funciones
+   -- Concepto
+   -- SQL Server
+	  -- Escalares
+		 -- getdate()
+		 -- round (numero, decimales)
+		 -- substring ()
+		 -- cast ()
+		 -- case
+		 -- coalesce ()
+		 -- @@identity
+		 -- @@trancount
+	-- UDF (User Defined Functions)
+	   -- CREATE FUNCTION
+	   -- ALTER FUNCTION
+	   -- DROP FUNCTION
+	   -- Escalares
+	   -- InLine Table-Valued
+	   -- Multi-Statement Table-Valued
+
+-- UNION (select)
+-- INTERSECT (select)
+-- EXCEPT (select)
+-- Funcion CASE
